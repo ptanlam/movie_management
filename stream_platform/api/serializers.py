@@ -5,8 +5,6 @@ from ..models import StreamPlatform
 
 
 class StreamPlatformSerializer(serializers.ModelSerializer):
-    movies = MovieSerializer(many=True, read_only=True)
-
     class Meta:
         model = StreamPlatform
-        fields = "__all__"
+        fields = '__all__'

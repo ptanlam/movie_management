@@ -25,13 +25,13 @@ class StreamPlatformListAV(APIView):
 
 
 class StreamPlatformDetailAV(APIView):
-    def get(self, request: Request, pk: int):
-        platform = StreamPlatform.objects.get(id=pk)
+    def get(self, request: Request, platform_pk: int):
+        platform = StreamPlatform.objects.get(id=platform_pk)
         serializer = StreamPlatformSerializer(platform)
         return Response(serializer.data)
 
-    def put(self, request: Request, pk: int):
-        platform = StreamPlatform.objects.get(id=pk)
+    def put(self, request: Request, platform_pk: int):
+        platform = StreamPlatform.objects.get(id=platform_pk)
         serializer = StreamPlatformSerializer(platform,
                                               data=request.data)
 
@@ -42,7 +42,7 @@ class StreamPlatformDetailAV(APIView):
         serializer.save()
         return Response(serializer.data)
 
-    def delete(self, request: Request, pk: int):
-        platform = StreamPlatform.objects.get(id=pk)
+    def delete(self, request: Request, platform_pk: int):
+        platform = StreamPlatform.objects.get(id=platform_pk)
         platform.delete()
         return Response(status=status.HTTP_200_OK)

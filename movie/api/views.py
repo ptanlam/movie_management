@@ -1,31 +1,45 @@
 from rest_framework.response import Response
 from rest_framework.request import Request
+from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
-from rest_framework import status, generics, mixins
+from rest_framework import status, generics
+
+from stream_platform.models import StreamPlatform
+from stream_platform.api.serializers import StreamPlatformSerializer
 
 from ..models import Movie, Review
-from .serializers import MovieSerializer, ReviewSerializer
+from .serializers import (MovieSerializer, ReviewSerializer)
 
 
-class ReviewList(mixins.ListModelMixin,
-                 mixins.CreateModelMixin,
-                 generics.GenericAPIView):
+class ReviewListForMovie(generics.ListCreateAPIView):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
 
-    def get(self, request: Request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
+    def get_queryset(self):
+        movie_pk = self.kwargs.get('movie_pk')
+        return Movie.objects.get(pk=movie_pk).reviews.all()
 
-    def post(self, request: Request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
+    def perform_create(self, serializer):
+        movie_pk = self.kwargs.get('movie_pk')
+        movie = Movie.objects.get(pk=movie_pk)
+
+        author = self.request.user
+        reviews = Review.objects.filter(movie=movie,
+                                        author=author)
+
+        if reviews.exists():
+            raise ValidationError('You have already reviewed this movie.')
+
+        serializer.save(movie=movie, author=author)
 
 
-class ReviewDetail(mixins.RetrieveModelMixin, generics.GenericAPIView):
+class ReviewDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
 
-    def get(self, request: Request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+    def get_queryset(self):
+        review_pk = self.kwargs.get('review_pk')
+        return Review.objects.get(pk=review_pk)
 
 
 class MovieListAV(APIView):
@@ -46,12 +60,12 @@ class MovieListAV(APIView):
 
 class MovieDetailAV(APIView):
     def get(self, request: Request, movie_pk: int):
-        movie = Movie.objects.get(id=movie_pk)
         try:
+            movie = Movie.objects.get(id=movie_pk)
             serializer = MovieSerializer(movie)
             return Response(serializer.data)
         except Movie.DoesNotExist:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
     def put(self, request: Request, movie_pk: int):
         movie = Movie.objects.get(id=movie_pk)
@@ -68,3 +82,28 @@ class MovieDetailAV(APIView):
         movie = Movie.objects.get(id=movie_pk)
         movie.delete()
         return Response(status=status.HTTP_200_OK)
+
+
+class StreamPlatformListForMovieAV(APIView):
+    def get(self, request: Request,
+            movie_pk: int):
+        try:
+            stream_platforms = Movie.objects.get(pk=movie_pk) \
+                .stream_platforms
+            serializer = StreamPlatformSerializer(stream_platforms,
+                                                  many=True)
+            return Response(serializer.data)
+        except Movie.DoesNotExist:
+            print("hi")
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class StreamPlatformDetailForMovieAV(APIView):
+    def get(self, request: Request,
+            movie_pk: int, platform_pk: int):
+        try:
+            stream_platform = StreamPlatform.objects.get(pk=platform_pk)
+            serializer = StreamPlatformSerializer(stream_platform)
+            return Response(serializer.data)
+        except StreamPlatform.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)

@@ -4,13 +4,15 @@ from ..models import Movie, Review
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.StringRelatedField(read_only=True)
+
     class Meta:
         model = Review
-        fields = '__all__'
+        exclude = ('movie',)
 
 
 class MovieSerializer(serializers.ModelSerializer):
-    reviews = ReviewSerializer(many=True, read_only=True)
+    stream_platforms = serializers.StringRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Movie
