@@ -13,6 +13,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class MovieSerializer(serializers.ModelSerializer):
     stream_platforms = serializers.StringRelatedField(many=True, read_only=True)
+    avg_rating = serializers.ReadOnlyField()
+    number_of_ratings = serializers.ReadOnlyField()
 
     class Meta:
         model = Movie

@@ -1,4 +1,5 @@
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.request import Request
 from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
@@ -8,12 +9,15 @@ from stream_platform.models import StreamPlatform
 from stream_platform.api.serializers import StreamPlatformSerializer
 
 from ..models import Movie, Review
+
+from .permissions import IsAuthorOrReadOnly
 from .serializers import (MovieSerializer, ReviewSerializer)
 
 
 class ReviewListForMovie(generics.ListCreateAPIView):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         movie_pk = self.kwargs.get('movie_pk')
@@ -36,8 +40,9 @@ class ReviewListForMovie(generics.ListCreateAPIView):
 class ReviewDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
+    permission_classes = [IsAuthorOrReadOnly]
 
-    def get_queryset(self):
+    def get_object(self):
         review_pk = self.kwargs.get('review_pk')
         return Review.objects.get(pk=review_pk)
 
